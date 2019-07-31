@@ -1,13 +1,8 @@
 package com.sapient.weather.webclients;
 
-import java.io.IOException;
-
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sapient.weather.entity.Weather;
 
 public class RestWebClient extends AbstractWebClient<RestTemplate>{
 	
@@ -15,7 +10,7 @@ public class RestWebClient extends AbstractWebClient<RestTemplate>{
 		super(parent);
 	}
 
-	public ResponseEntity<String> getUrl(String url) {
+	public ResponseEntity<String> getUrl(String url) throws RestClientException {
 		RestTemplate client = getParent();
 		ResponseEntity<String> response = client.getForEntity(url, String.class);
 		return response;

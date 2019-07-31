@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.sapient.weather.entity.NextDayForecast;
 import com.sapient.weather.entity.Weather;
+import com.sapient.weather.error.WeatherDataParseException;
 import com.sapient.weather.webclients.RestWebClient;
 import com.sapient.weather.webclients.WebClientFactory;
 
@@ -59,17 +60,16 @@ public class WeatherServiceImpl implements WeatherService{
 			JsonNode forecastList =  root.path("list");
 			buildWeatherForecast(weather,forecastList);
 			
-		} catch (Exception e) {
-			e.printStackTrace();	//TBD
+		} catch (IOException e) {
+			throw new WeatherDataParseException(e.getMessage());
 		}
 		return weather;
 	}
 
-	private void buildWeatherForecast(Weather weather, JsonNode forecastList) throws ParseException {
+	private void buildWeatherForecast(Weather weather, JsonNode forecastList){
 		Map<Integer,List<NextDayForecast>>  forecastMapper = new HashMap();
 		
-		if(forecastList.isArray()) {
-			
+		try {
 			for(JsonNode entry:forecastList) {
 				String dateTime = entry.path("dt_txt").asText();
 				int temp_max = entry.path("main").path("temp_max").asInt();
@@ -83,9 +83,8 @@ public class WeatherServiceImpl implements WeatherService{
 				}				
 				forecastMapper.get(date.getDate()).add(new NextDayForecast(dateTime,humidity_level,temp_max));
 			}
-		}
-		else {
-			//TDB throw exception
+		}catch(ParseException e) {
+			throw new WeatherDataParseException(e.getMessage());
 		}
 		
 		//Now figure out the average weather
@@ -95,12 +94,14 @@ public class WeatherServiceImpl implements WeatherService{
 			
 			dayForecastList.forEach(element-> forecastFilter(weather,element));
 			int finalSize = weather.getForecasts().size();
-			
+		
 			if(finalSize ==intSize ) {
 				NextDayForecast dayForecast = dayForecastList.get(0);
 				dayForecast.setAction("Normal Day. Enjoy!");
 				weather.getForecasts().add(dayForecast);
 			}
+			
+			if(weather.getForecasts().size()==3) break;
 		}
 	}
 
